@@ -1,0 +1,27 @@
+#include <stdio.h>
+
+int main() {
+    int memory[10] = {0};  // 0 = free, 1 = allocated
+    int block;
+
+    printf("Enter block number to allocate (0-9): ");
+    scanf("%d", &block);
+
+    if (block >= 0 && block < 10) {
+        if (memory[block] == 0) {
+            memory[block] = 1;
+            printf("Memory block %d allocated successfully.\n", block);
+        } else {
+            printf("Memory block %d is already allocated.\n", block);
+        }
+    } else {
+        printf("Invalid block number.\n");
+    }
+
+    printf("\nMemory Status:\n");
+    for (int i = 0; i < 10; i++) {
+        printf("Block %d : %s\n", i, memory[i] ? "Allocated" : "Free");
+    }
+
+    return 0;
+}

@@ -1,0 +1,34 @@
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+int main() {
+    int fd;
+    char writeData[] = "Hello, File System!";
+    char readData[50];
+
+    // Create/Open file
+    fd = open("sample.txt", O_CREAT | O_RDWR, 0644);
+
+    if (fd == -1) {
+        printf("Error opening file.\n");
+        return 1;
+    }
+
+    // Write to file
+    write(fd, writeData, sizeof(writeData));
+
+    // Move file pointer to the beginning
+    lseek(fd, 0, SEEK_SET);
+
+    // Read from file
+    read(fd, readData, sizeof(writeData));
+
+    // Display data
+    printf("Data read from file: %s\n", readData);
+
+    // Close file
+    close(fd);
+
+    return 0;
+}

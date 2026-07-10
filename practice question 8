@@ -1,0 +1,45 @@
+#include <stdio.h>
+#include <pthread.h>
+
+pthread_mutex_t lock;
+int turn = 0;   // 0 = odd thread, 1 = even thread
+
+void *printOdd(void *arg) {
+    for (int i = 1; i <= 10; i += 2) {
+        while (turn != 0);
+
+        pthread_mutex_lock(&lock);
+        printf("Odd Thread: %d\n", i);
+        turn = 1;
+        pthread_mutex_unlock(&lock);
+    }
+    return NULL;
+}
+
+void *printEven(void *arg) {
+    for (int i = 2; i <= 10; i += 2) {
+        while (turn != 1);
+
+        pthread_mutex_lock(&lock);
+        printf("Even Thread: %d\n", i);
+        turn = 0;
+        pthread_mutex_unlock(&lock);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+
+    pthread_mutex_init(&lock, NULL);
+
+    pthread_create(&t1, NULL, printOdd, NULL);
+    pthread_create(&t2, NULL, printEven, NULL);
+
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+
+    pthread_mutex_destroy(&lock);
+
+    return 0;
+}

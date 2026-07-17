@@ -1,0 +1,92 @@
+V.MANJU SUBHASHINI (192571040)
+
+ANSWER-1
+a) Multi-User, Time-Sharing Operating System
+b) Two types of kernel
+   Process Scheduling: Allocates CPU time to each user process to ensure fair and equitable execution.
+   Memory Protection: Enforces memory isolation so one student's program cannot inadvertently or
+   maliciously access or alter another student's memory space.
+c) #include <stdio.h>
+#include <unistd.h>
+int main() {
+if (fork() == 0)
+printf("Child PID = %d\n", getpid());
+else
+printf("Parent PID = %d\n", getpid());
+return 0;
+}
+
+ANSWER-2
+a)
+Creation: open() or create() 
+Writing: write()
+Reading: read()
+Closing: close()
+b)
+open(): Prepares a file for access by locating it in the file system, verifying access permissions and file acessing .
+close():  Terminates the association of a file descriptor with the underlying file,releasing allocated system resources.
+c)
+#include <fcntl.h>
+#include <unistd.h>
+int fd;
+fd = open("student.txt", O_CREAT | O_WRONLY, 0644);
+write(fd, "John", 4);
+close(fd);
+
+ANSWER-3
+a)
+open (twice: once for the source file, once for the destination file)
+read (to retrieve data from the source file)
+write (to write data to the destination file)
+close (twice: to release the file descriptors)
+exit (to terminate the program properly)
+b)
+read(int fd, void *buf, size_t count): This system call copies a specified number of bytes from an open file associated
+write(int fd, const void *buf, size_t count): This system call takes a specified number of bytes from a memory buffer and writes them into the file associated.
+c)
+#include <fcntl.h>
+#include <unistd.h>
+int main() {
+int src = open("source.txt", O_RDONLY);
+int dest = open("dest.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+char buf[1024];
+int n;
+while ((n = read(src, buf, sizeof(buf))) > 0)
+write(dest, buf, n);
+close(src);
+close(dest);
+return 0;
+}
+
+ANSWER-4
+a)
+fork(): Creates a new child process by duplicating the calling (parent) process.
+exec(): Replaces the current process image with a new program.
+b)
+wait() causes the parent process to pause execution until one of its child processes finishes.
+It collects the child's exit status and prevents the child from becoming a zombie process.
+c)
+include<stdio.h>
+\pid_t pid = fork();
+if (pid == 0)
+execl("/bin/ls", "ls", NULL);
+else
+wait(NULL);
+
+ANSWER-5
+a)
+Organizes and stores files efficiently.
+Provides secure access to files.
+Supports file creation, deletion, reading, and writing.
+Manages storage space and file permissions.
+b)
+open(): Opens a file and returns a file descriptor for access.
+close(): Closes the file and releases the associated resources.
+c)
+#include <fcntl.h>
+#include <unistd.h>
+int fd;
+char buffer[100];
+fd = open("file.txt", O_RDONLY);
+read(fd, buffer, sizeof(buffer));
+close(fd);

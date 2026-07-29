@@ -1,0 +1,16 @@
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+int main() {
+    int id = shmget(1234, 100, IPC_CREAT | 0666);
+    char *p = shmat(id, NULL, 0);
+
+    sprintf(p, "Hello World");
+
+    printf("Shared Memory Data: %s\n", p);
+
+    shmdt(p);
+
+    return 0;
+}

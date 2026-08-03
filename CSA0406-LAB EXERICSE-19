@@ -1,0 +1,23 @@
+#include<stdio.h>
+
+int main()
+{
+    int mutex=1;
+
+    printf("Process wants to enter Critical Section\n");
+
+    if(mutex==1)
+    {
+        mutex=0;
+        printf("Process entered Critical Section\n");
+
+        printf("Executing...\n");
+
+        mutex=1;
+        printf("Process exited Critical Section\n");
+    }
+    else
+        printf("Critical Section Busy\n");
+
+    return 0;
+}

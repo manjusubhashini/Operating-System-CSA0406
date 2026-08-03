@@ -1,0 +1,17 @@
+#include<stdio.h>
+
+int main()
+{
+    int readcount=0;
+
+    printf("Reader wants to read\n");
+
+    readcount++;
+    printf("Reader is Reading...\n");
+
+    readcount--;
+
+    printf("Writer is Writing...\n");
+
+    return 0;
+}

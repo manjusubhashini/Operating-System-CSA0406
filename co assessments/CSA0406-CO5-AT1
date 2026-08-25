@@ -1,0 +1,272 @@
+1. Optimized Linux File System Layout – 50 GB Server
+The 50 GB storage should be partitioned so that rapidly growing logs cannot consume the entire disk and affect critical services.
+Proposed Partition Layout
+Partition   	Size	  Purpose
+/boot        	1 GB	  Kernel and boot files
+/	            12 GB	  Operating system and applications
+/var	        10 GB	  Logs, caches and variable data
+/var/log	    10 GB	  System/application logs
+/home	        8 GB	  User files
+/opt	        5 GB	  Application data
+Swap	        4 GB	  Virtual memory
+Free/Reserved	0 GB	Managed through LVM
+Since the requirement specifically states that logs must not exceed 10 GB, /var/log should be isolated as a separate partition or logical volume.
+Storage Management
+Use LVM (Logical Volume Manager) so that storage can be resized when required.
+lsblk
+df -h
+sudo vgs
+sudo lvs
+Log Rotation
+Configure logrotate to prevent unlimited log growth.
+Example:
+/var/log/*.log {
+    daily
+    rotate 7
+    compress
+    missingok
+    notifempty
+    maxsize 1G
+}
+This rotates logs daily and compresses old files.
+Force rotation when required:
+sudo logrotate -f /etc/logrotate.conf
+Monitoring
+df -h
+du -sh /var/log/*
+Disk usage alerts can be configured when /var/log approaches 80–90%.
+Advantages
+Separate /var/log prevents logs from filling /.
+LVM allows flexible storage management.
+logrotate automatically limits log growth.
+Compression saves disk space.
+Monitoring detects storage problems early.
+Critical services continue operating because the root filesystem retains free space.
+Conclusion
+A combination of separate partitions, LVM, logrotate, compression and disk monitoring ensures efficient use of the 50 GB storage while guaranteeing that logs remain within the 10 GB limit.
+
+2. Kernel-Level Optimization for High CPU Workloads
+The system experiences frequent context switching and must support real-time processing. Since hardware cannot be upgraded, kernel-level optimization should be used.
+1. Analyze CPU and Context Switching
+Use:
+top
+vmstat 1
+pidstat -w 1
+These tools identify high CPU usage and excessive context switching.
+
+2. Scheduler Tuning
+Linux scheduler behavior can be adjusted using sysctl.
+For example:
+sysctl -a | grep sched
+CPU affinity can restrict a process to selected CPUs:
+taskset -cp 2,3 <PID>
+This reduces unnecessary CPU migration.
+
+3. Process Priority
+Use nice and renice:
+sudo renice -n -5 -p <PID>
+Important real-time workloads can receive higher priority.
+For real-time scheduling:
+chrt -f 50 <command>
+SCHED_FIFO can provide predictable scheduling for appropriate real-time workloads.
+
+4. CPU Isolation
+Critical workloads can be assigned dedicated CPUs using kernel boot parameters such as:
+isolcpus=2,3
+This reduces interference from ordinary tasks.
+
+5. Kernel Modules
+Unnecessary kernel modules can be removed:
+lsmod
+sudo modprobe -r <module>
+Required modules should be retained to avoid affecting hardware or services.
+
+6. Monitor Improvements
+After changes:
+vmstat 1
+pidstat -w 1
+mpstat -P ALL 1
+Compare context-switching and CPU utilization before and after optimization.
+Advantages
+Reduced unnecessary context switching.
+Better CPU affinity.
+Higher priority for real-time tasks.
+Reduced interference between workloads.
+No hardware upgrade required.
+Conclusion
+Combining scheduler tuning, CPU affinity, process priority, CPU isolation and careful kernel-module management can improve performance while maintaining real-time responsiveness.
+
+3. Processing 1 Million Log Entries Using Shell Scripting
+Processing 1 million entries within 2 minutes requires efficient commands and avoiding unnecessary loops and external processes.
+Strategy
+The main principle is:
+Use Unix tools that process data in bulk rather than processing each line individually using a shell loop.
+Efficient Commands
+Assume the log file is:
+access.log
+Count entries:
+wc -l access.log
+Search errors:
+grep -F "ERROR" access.log
+Count error entries:
+grep -Fc "ERROR" access.log
+Extract fields:
+awk '{print $1,$4,$7}' access.log
+Sort and count repeated values:
+awk '{print $7}' access.log | sort | uniq -c | sort -nr
+Example Optimized Script
+#!/bin/bash
+LOG="access.log"
+echo "Total entries:"
+wc -l < "$LOG"
+echo "Total errors:"
+grep -Fc "ERROR" "$LOG"
+echo "Top requested URLs:"
+awk '{print $7}' "$LOG" |
+sort |
+uniq -c |
+sort -nr |
+head -10
+Performance Optimization
+Avoid:
+while read line
+do
+done < access.log
+for million-line processing when standard utilities can perform the operation directly.
+Avoid repeatedly calling commands inside loops because each command creates an additional process.
+Prefer:
+awk
+grep
+sort
+uniq
+cut
+wc
+These utilities are optimized for large text streams.
+Parallel Processing
+If the analysis contains independent operations, they can be executed in parallel:
+grep -Fc "ERROR" access.log &
+awk '{print $7}' access.log | sort | uniq -c &
+wait
+Performance Measurement
+time ./logprocess.sh
+The script should be tested with representative 1-million-entry logs and optimized until execution remains below the required 2-minute limit.
+Conclusion
+Using bulk-processing commands, pipelines, fixed-string grep, AWK, avoiding shell loops and parallelizing independent operations provides an efficient solution for processing one million log entries.
+
+4. Managing a Faulty Process Consuming 90% CPU
+The objective is to identify and control the faulty process without rebooting the server and without affecting critical services.
+Step 1 – Identify the Process
+Use:
+top
+or:
+ps aux --sort=-%cpu | head
+This identifies the process consuming excessive CPU.
+Example:
+PID    USER     %CPU    COMMAND
+4521   user     90.0    faulty_app
+
+Step 2 – Monitor the Process
+top -p 4521
+or:
+pidstat -p 4521 1
+Check whether CPU usage remains consistently high.
+
+Step 3 – Identify Process Details
+ps -fp 4521
+Check its parent:
+pstree -p 4521
+This helps determine whether the process belongs to a critical service.
+
+Step 4 – Reduce CPU Priority
+If the process is non-critical:
+sudo renice +10 -p 4521
+A higher nice value reduces its scheduling priority.
+
+Step 5 – Restrict CPU Usage
+Using cpulimit where available:
+sudo cpulimit -p 4521 -l 30
+This can limit the process to approximately 30% CPU.
+CPU affinity can also be changed:
+sudo taskset -cp 0 4521
+
+Step 6 – Graceful Termination
+If the process continues causing problems:
+sudo kill -TERM 4521
+SIGTERM allows the application to shut down cleanly.
+If it does not respond:
+sudo kill -KILL 4521
+SIGKILL should be the last resort.
+
+Step 7 – Protect Critical Services
+Before terminating the process:
+systemctl status <critical-service>
+Critical services should not be stopped or restarted unnecessarily.
+Monitoring After Action
+top
+ps aux --sort=-%cpu | head
+Confirm that CPU utilization has returned to normal.
+Conclusion
+The appropriate strategy is:
+Identify → Monitor → Verify importance → Lower priority/limit CPU → Gracefully terminate if necessary → Monitor again.
+This solves the problem without rebooting and minimizes impact on critical services.
+
+5. Resource Allocation for 5 Virtual Machines
+Given
+Total physical RAM = 16 GB
+Number of VMs = 5
+Minimum RAM per VM = 2 GB
+Host OS requirement = 4 GB
+Required RAM
+VM requirement:
+   5×2=10GB
+Host requirement:
+   4GB
+Total:
+10+4=14GB
+Available:
+16GB
+Remaining:
+16−14=
+2GBTherefore, the configuration is feasible.
+Proposed Allocation
+Resource	RAM
+Host OS	4 GB
+VM1	2 GB
+VM2	2 GB
+VM3	2 GB
+VM4	2 GB
+VM5	2 GB
+Remaining	2 GB
+Total	16 GB
+Virtualization Strategy
+Each VM receives its guaranteed minimum of 2 GB.
+The host retains 4 GB to ensure stable operation.
+The remaining 2 GB should not be immediately assigned permanently. It can act as a safety margin for temporary host/VM requirements.
+Memory Overcommitment
+Memory overcommitment can allow VMs to request more memory than their initial allocation, but it should be used carefully because the physical RAM is limited.
+Ballooning
+Memory ballooning allows the hypervisor to dynamically reclaim unused memory from one VM and allocate it to another VM that requires more memory.
+Example:
+VM1 → 2 GB
+VM2 → 2 GB
+VM3 → 2 GB
+VM4 → 2 GB
+VM5 → 2 GB
+Host → 4 GB
+Free pool → 2 GB
+If VM3 needs additional memory and another VM is idle, the hypervisor can dynamically redistribute available memory.
+CPU Allocation
+CPU resources should also be distributed fairly. Avoid allocating excessive virtual CPUs because this can increase scheduling overhead.
+Monitoring
+Monitor memory usage using:
+free -h
+and virtualization-specific tools such as:
+virsh dommemstat <VM-name>
+Advantages
+All 5 VMs satisfy their minimum 2 GB requirement.
+Host retains the required 4 GB.
+2 GB remains available as a safety buffer.
+Ballooning can dynamically redistribute unused memory.
+Resource monitoring prevents memory exhaustion.
+Conclusion
+The proposed allocation is feasible because the total minimum requirement is 14 GB, while 16 GB is available. Allocating 4 GB to the host, 2 GB to each VM, and retaining 2 GB as a flexible reserve provides a stable and efficient virtualization environment.

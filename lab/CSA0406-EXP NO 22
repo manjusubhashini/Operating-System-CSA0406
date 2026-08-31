@@ -1,0 +1,31 @@
+#include <stdio.h>
+
+int main() {
+    int b[10], p[10], n, m, i, j, pos;
+
+    printf("Enter number of blocks: ");
+    scanf("%d",&m);
+
+    printf("Enter block sizes: ");
+    for(i=0;i<m;i++) scanf("%d",&b[i]);
+
+    printf("Enter number of processes: ");
+    scanf("%d",&n);
+
+    printf("Enter process sizes: ");
+    for(i=0;i<n;i++) scanf("%d",&p[i]);
+
+    for(i=0;i<n;i++) {
+        pos = -1;
+        for(j=0;j<m;j++)
+            if(b[j] >= p[i] && (pos == -1 || b[j] < b[pos]))
+                pos = j;
+
+        if(pos != -1) {
+            printf("Process %d -> Block %d\n",i+1,pos+1);
+            b[pos] -= p[i];
+        } else
+            printf("Process %d -> Not Allocated\n",i+1);
+    }
+    return 0;
+}

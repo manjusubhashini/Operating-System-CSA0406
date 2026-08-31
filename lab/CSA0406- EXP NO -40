@@ -1,0 +1,23 @@
+#include <stdio.h>
+#include <sys/stat.h>
+
+int main() {
+    printf("Linux File Permissions:\n\n");
+
+    printf("r = Read    (4)\n");
+    printf("w = Write   (2)\n");
+    printf("x = Execute (1)\n\n");
+
+    printf("Users:\n");
+    printf("u = Owner\n");
+    printf("g = Group\n");
+    printf("o = Others\n");
+
+    printf("\nExample:\n");
+    printf("chmod 755 file.txt\n");
+    printf("Owner  : rwx\n");
+    printf("Group  : r-x\n");
+    printf("Others : r-x\n");
+
+    return 0;
+}
